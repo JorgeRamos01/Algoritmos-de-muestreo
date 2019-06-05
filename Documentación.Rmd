@@ -1,0 +1,79 @@
+---
+title: "Proyecto de clase de programación y análisis de algoritmos"
+output: html_notebook
+---
+##Autor: Jorge Luis Ramos Zavaleta
+El paquete contiene 5 programas que permiten hacer muestreo aleatorio simple sin reemplazo dada una población y un programa auxiliar que permite generar un vector de probabilidades de inclusión para una población dado el tamaño de la muestra que se quiere obtener de ella. Cada uno tiene sus ventajas y desventajas. 
+
+Las referencias para estos algoritmos estará al final de este documento, y el uso de las funciones se encuentra al final de cada código.
+
+###Random Sort
+El primero de ellos es RandomSort que puede ser llamado de la siguiente manera:
+
+```{r}
+Rcpp::sourceCpp('Ruta donde este localizado el archivo/randomsort.cpp')
+```
+Este programa toma como parámetros un vector de R conteniendo los datos a los que se les quiere tomar la muestra y el tamaño de la muestra, y regresa un vector del tamaño de la muestra con datos elegidos aleatoriamente de la población. El proceso de elección de los datos es muy simple se genera un vector de números aleatorios uniformes en (0,1) y se ordena en nuestro caso de manera decreciente y usando los índices de ordenamiento se ordena el vector de población al mismo tiempo, y se eligen los primeros n elementos del vector de población ordenado, donde n es el tamaño de la muestra. 
+
+La ventaja de este algoritmo es que puede generalizarse fácilmente para que la población no necesariamente consista de números sino de cualquier objeto que entre en una lista. Pero debido a que genera un nuevo vector del tamaño de la población y además a que esta implementado el ordenamiento interno con un Bubblesort para poder hacer uso de los índices para reordenar el vector de población el algoritmo no es muy eficiente ni en memoria ni en tiempo maquina.
+
+###Muestreo de reserva aleatorio simple sin reemplazo
+
+Este programa toma como parámetros un vector de R conteniendo los datos a los que se les quiere tomar la muestra y el tamaño de la muestra, y retorna un vector del tamaño de la muestra con datos elegidos de la población de manera aleatoria bajo un criterio específico. Inicialmente el algoritmo genera un vector del tamaño de la muestra(n) y almacena los primeros n valores de la población en dicho vector. Para las siguientes entradas del vector de la ppblación se considera reemplazar a los vectores que estan en el vector muestra con la misma probabilidad definida con respecto al índice de la observación en que estemos sobre el vector de la población. Se puede llamar de la siguiente manera:
+```{r}
+Rcpp::sourceCpp('Ruta donde este localizado el archivo/reservoir.cpp')
+
+```
+
+Tiene la ventaja de que el vector de población no necesariamente tiene que ser númerico, además de que no abusa de la memoria al solo guardar en memoria el vector de salida, por lo que es muy eficiente para trabajar con poblaciones muy grandes que incluso no se conozca su tamaño.
+
+###Selección-Rechazo 
+Este algoritmo de muestre es conocido como de selección - rechazo, y es considerado el mejor algoritmo
+para elegir una muestra de acuerdo el muestreo aleatorio simple sin reemplazo, aparte de ser un algoritmo
+completamente secuencial. Recibe 2 parámetros el vector de población y el tamaño de la muestra, y retorna un vector del tamaño de la muestra con datos de la población elegidos de manera aleatoria. Consiste en aceptar si un cociente que contiene como datos el número de aceptados, el tamaño de la población y el tamaño de la muestra es mayor que un número aleatorio uniforme(0,1) que generamos para cada elemento de la población.
+
+Tiene una gran limitación, y es que no siempre llega a elegir por completo los elementos necesarios para completar la muestra por lo que en esta versión se incluye la condición de repetir el proceso
+hasta que se complete el vector con el tamaño de la muestra deseado, lo cual limita la velocidad final sin embargo el hecho de introducir los números aleatorios de la distribución uniforme(0,1) ayudan a aminorar el tiempo total. Se puede acceder a la función de la siguiente manera.
+```{r}
+Rcpp::sourceCpp('Ruta donde este localizado el archivo/selectReject.cpp')
+```
+
+###Probabilidades de inclusión
+Las probabilidades de inclusión son las probabilidades específicas que se le asignan a cada elemento del vector población con respecto al tamaño de la muestra. Este vector tiene una propiedad particular que es que la suma del vector que retorna es igual al tamaño de la muestra. Estos vectores de probabilidades de inclusión son muy útiles para definir nuevos esquemas de muestreo y son especialmente usados por un área que es conocida como muestreo balanceado y pueden usarse tanto para hacer muestreo con o sin repetición. 
+
+Una característica particular es que la probabilidad es establecida para un vector poblacional númerico y cuyas entradas sean positivas, por lo que pueden utilizarse los índices del vector poblacional para generar este vector.
+
+El programa se carga de la siguiente manera:
+```{r}
+Rcpp::sourceCpp('Ruta donde este localizado el archivo/inclusionprob.cpp')
+```
+
+###Método del pivote
+Este método recibe de parámetro un vector de probabilidades de inclusión y retorna un vector del mismo tamaño que el vector de probabilidades de inclusión con ceros y unos. El número de unos de este vector de retorno coíncide con el tamaño de la muestra asociado al vector de probabilidades de inclusión. El método del algoritmo consiste en esencia en rearmar un nuevo vector de probabilidades de inclusión partiendo el anterior y usando solo una de las particiones para hacer el calculo de las nuevas entradas del vector de probabilidades de inclusión. En particular este algoritmo solo hace el cambio de 2 entradas por vez, y se recorre el índice a uno más por lo que regularmente se tomar N-1 pasos para terminar, donde N es el tamaño del vector de probabilidades de inclusión.
+
+El vector resultante tiene tantos unos como el tamaño de la muestra implícito este número en el vector de probabilidaes de inclusión. Dicho vector índica un uno en el índice del elemento del vector población que fue elegido. La función se carga en R de la siguiente manera:
+```{r}
+Rcpp::sourceCpp('Ruta donde este localizado el archivo/metodopivote.cpp')
+```
+###Método del pivote aleatorio
+En esencia es el mismo algoritmo que el método del pivote pero dado que el método del pivote parte del orden que tiene el vector de probabilidades de inclusión hace que la aleatoriedad se vea reducida. Por lo que una manera de arreglarlo es reordenar de manera aleatoria el vector de probabilidades de inclusión antes de que inicie el método del pivote. Este cambio parece ser inocente pero permite maximizar la entropía.
+
+El resultado de este método al igual que el método del pivote es un vector que tiene tantos unos como el tamaño de la muestra cuyo número esta implícito en el vector de probabilidaes de inclusión. Dicho vector índica un uno en el índice del elemento del vector población que fue elegido y cero en caso contrario. La función se carga en R de la siguiente manera:
+```{r}
+Rcpp::sourceCpp('Ruta donde este localizado el archivo/randompivote.cpp')
+```
+
+###Referencias
+
+```{r}
+Chauvet, Guillaume (2012)On a characterization of ordered pivotal sampling. Consultado en arXiv:1211.5442 
+
+Fan, C. T., Muller, M. E., & Rezucha, I. (1962). Development of sampling plans by using sequential (item by item) selection techniques and digital computers. Journal of the American Statistical Association, 57(298), 387-402.
+
+Tillé, Y. (2006) Sampling algorithms. Springer-Verlag, New York.
+
+Tillé, Y. y Ardilly, Pascal (2006) Sampling method:exercises and solutions. Springer-Verlag, New York.
+
+
+```
+
